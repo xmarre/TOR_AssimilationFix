@@ -1,0 +1,26 @@
+<Module>
+	<Name value="TOR Assimilation Fix"/>
+	<Id value="TOR_AssimilationFix"/>
+	<Version value="v1.0.0"/>
+	<SingleplayerModule value="true"/>
+	<Official value="false"/>
+	<DependedModules>
+		<DependedModule Id="Bannerlord.Harmony" />
+		<DependedModule Id="Native" />
+		<DependedModule Id="SandBoxCore" />
+		<DependedModule Id="Sandbox" />
+		<DependedModule Id="StoryMode" optional="true" />
+		<DependedModule Id="TOR_Core" />
+	</DependedModules>
+	<SubModules>
+		<SubModule>
+			<Name value="TOR Assimilation Fix"/>
+			<DLLName value="TOR_AssimilationFix.dll"/>
+			<SubModuleClassType value="TOR_AssimilationFix.SubModule"/>
+			<Tags>
+				<Tag key="DedicatedServerType" value="none"/>
+				<Tag key="IsNoRenderModeElement" value="false"/>
+			</Tags>
+		</SubModule>
+	</SubModules>
+</Module>
