@@ -1,12 +1,13 @@
 name: temp-tortrainer-v023-build
 on:
-  push:
+  pull_request:
     branches:
-      - temp/tortrainer-v0.2.3-build-20260723
+      - master
 permissions:
   contents: write
 jobs:
   build:
+    if: github.head_ref == 'temp/tortrainer-v0.2.3-build-20260723'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,8 +39,8 @@ jobs:
               <TargetFramework>netstandard2.0</TargetFramework><LangVersion>7.3</LangVersion><Nullable>disable</Nullable>
               <EnableDefaultCompileItems>false</EnableDefaultCompileItems><GenerateAssemblyInfo>false</GenerateAssemblyInfo>
               <AssemblyName>TORTrainer</AssemblyName><RootNamespace>TORTrainer</RootNamespace>
-              <Version>0.2.3</Version><AssemblyVersion>0.2.3.0</AssemblyVersion><FileVersion>0.2.3.0</FileVersion>
-              <DebugType>portable</DebugType>
+              <Version>0.2.3</Version><AssemblyVersion>0.2.3.0</AssemblyVersion><FileVersion>0.2.3.0</FileVersion><DebugType>portable</DebugType>
+              <BaseIntermediateOutputPath>obj-main/</BaseIntermediateOutputPath><BaseOutputPath>bin-main/</BaseOutputPath>
             </PropertyGroup>
             <ItemGroup>
               <PackageReference Include="Bannerlord.ReferenceAssemblies" Version="1.3.15.110062" />
@@ -55,8 +56,8 @@ jobs:
               <TargetFramework>netstandard2.0</TargetFramework><LangVersion>7.3</LangVersion><Nullable>disable</Nullable>
               <EnableDefaultCompileItems>false</EnableDefaultCompileItems><GenerateAssemblyInfo>false</GenerateAssemblyInfo>
               <AssemblyName>TORTrainer.Campaign</AssemblyName><RootNamespace>TORTrainer</RootNamespace>
-              <Version>0.2.3</Version><AssemblyVersion>0.2.3.0</AssemblyVersion><FileVersion>0.2.3.0</FileVersion>
-              <DebugType>portable</DebugType>
+              <Version>0.2.3</Version><AssemblyVersion>0.2.3.0</AssemblyVersion><FileVersion>0.2.3.0</FileVersion><DebugType>portable</DebugType>
+              <BaseIntermediateOutputPath>obj-campaign/</BaseIntermediateOutputPath><BaseOutputPath>bin-campaign/</BaseOutputPath>
             </PropertyGroup>
             <ItemGroup><PackageReference Include="Bannerlord.ReferenceAssemblies" Version="1.3.15.110062" /></ItemGroup>
             <ItemGroup><Compile Include="CampaignTrainer.cs" /></ItemGroup>
@@ -72,23 +73,18 @@ jobs:
           dotnet build "$d/CampaignTrainer.CI.csproj" -c Release -v:minimal 2>&1 | Tee-Object "$d/CampaignTrainer-build.log"
           if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE }
           New-Item -ItemType Directory -Force "$d/out" | Out-Null
-          Copy-Item "$d/bin/Release/netstandard2.0/TORTrainer.dll" "$d/out/"
-          Copy-Item "$d/bin/Release/netstandard2.0/TORTrainer.pdb" "$d/out/" -ErrorAction SilentlyContinue
-          Copy-Item "$d/bin/Release/netstandard2.0/TORTrainer.Campaign.dll" "$d/out/"
-          Copy-Item "$d/bin/Release/netstandard2.0/TORTrainer.Campaign.pdb" "$d/out/" -ErrorAction SilentlyContinue
-          Get-FileHash "$d/out/*.dll" -Algorithm SHA256 | Format-Table -AutoSize | Out-String | Set-Content "$d/out/SHA256.txt"
+          Copy-Item "$d/bin-main/Release/netstandard2.0/TORTrainer.dll" "$d/out/"
+          Copy-Item "$d/bin-main/Release/netstandard2.0/TORTrainer.pdb" "$d/out/" -ErrorAction SilentlyContinue
+          Copy-Item "$d/bin-campaign/Release/netstandard2.0/TORTrainer.Campaign.dll" "$d/out/"
+          Copy-Item "$d/bin-campaign/Release/netstandard2.0/TORTrainer.Campaign.pdb" "$d/out/" -ErrorAction SilentlyContinue
+          $v1=[Reflection.AssemblyName]::GetAssemblyName((Resolve-Path "$d/out/TORTrainer.dll")).Version
+          $v2=[Reflection.AssemblyName]::GetAssemblyName((Resolve-Path "$d/out/TORTrainer.Campaign.dll")).Version
+          "TORTrainer.dll AssemblyVersion=$v1" | Set-Content "$d/out/BUILD-VERIFY.txt"
+          "TORTrainer.Campaign.dll AssemblyVersion=$v2" | Add-Content "$d/out/BUILD-VERIFY.txt"
+          Get-FileHash "$d/out/*.dll" -Algorithm SHA256 | Format-Table -AutoSize | Out-String | Add-Content "$d/out/BUILD-VERIFY.txt"
       - name: Upload compiled binaries
         uses: actions/upload-artifact@v4
         with:
           name: TORTrainer-v0.2.3-compiled
           path: .tmp-tortrainer-build/out/*
           if-no-files-found: error
-      - name: Remove temporary branch after successful artifact upload
-        if: success()
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $branch='temp/tortrainer-v0.2.3-build-20260723'
-          $escaped=$branch -replace '/','%2F'
-          Invoke-RestMethod -Method Delete -Headers @{Authorization="Bearer $env:GH_TOKEN"; Accept='application/vnd.github+json'} -Uri "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$escaped"
